@@ -136,7 +136,7 @@ The system uses **LangGraph's `InMemorySaver` checkpointer**, which persists the
 
 **What this is:** Primarily **episodic memory** — a record of what was said in this conversation. It is *not* semantic memory (compressed long-term summaries) or user-level persistent memory across sessions.
 
-**Honest limitation:** Sliding-window-of-last-N-messages is the floor. I haven't implemented semantic compression or cross-session memory. Given more time, I'd add a summarization step that compresses older turns into a semantic summary, keeping the context window manageable while preserving meaningful prior context.
+**Honest limitation:** Currently the system relies on conversational history stored in the graph state rather than semantic long-term memory compression.  Given more time, I'd add a summarization step that compresses older turns into a semantic summary, keeping the context window manageable while preserving meaningful prior context.
 
 ---
 
@@ -181,7 +181,7 @@ See [Retrieval Strategy](#-retrieval-strategy) above.
 | 2 | Explain what embeddings are. | DIRECT_ANSWER | DIRECT_ANSWER | ✅ |
 | 3 | Compare retrieval strategies in recent RAG papers | RETRIEVE | RETRIEVE | ✅ |
 | 4 | What does the paper say about speculative decoding latency? | RETRIEVE | RETRIEVE | ✅ |
-| 5 | Latest memory agent papers released today | TOOL (arxiv_search) | Error (HTTP 429) | ❌ |
+| 5 | Latest memory agent papers released today | TOOL (arxiv_search) |  API rate limited (HTTP 429) | ❌ |
 | 6 | Calculate % improvement from 50 to 75 | TOOL (calculator) | TOOL (calculator) | ✅ |
 | 7 | Compare their architectures. | CLARIFY | CLARIFY | ✅ |
 | 8 | How does it improve memory? | CLARIFY | RETRIEVE | ❌ |
