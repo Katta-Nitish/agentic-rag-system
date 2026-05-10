@@ -1,8 +1,8 @@
 {
     "total_tests": 10,
-    "passed": 7,
-    "failed": 3,
-    "accuracy": 70.0,
+    "passed": 10,
+    "failed": 0,
+    "accuracy": 100.0,
     "results": [
         {
             "query": "What is attention in transformers?",
@@ -42,8 +42,12 @@
         },
         {
             "query": "What are the latest memory agent papers released today?",
-            "passed": false,
-            "error": "Page request resulted in HTTP 429 (https://export.arxiv.org/api/query?search_query=cat%3Acs.AI+AND+memory-augmented+AI+agents&id_list=&sortBy=submittedDate&sortOrder=descending&start=0&max_results=100)"
+            "expected_action": "TOOL",
+            "predicted_action": "TOOL",
+            "tool_expected": "arxiv_search",
+            "tool_predicted": "arxiv_search",
+            "passed": true,
+            "description": "Should use arXiv search for latest research."
         },
         {
             "query": "Calculate the percentage improvement from 50 to 75.",
@@ -66,19 +70,19 @@
         {
             "query": "How does it improve memory?",
             "expected_action": "CLARIFY",
-            "predicted_action": "RETRIEVE",
+            "predicted_action": "CLARIFY",
             "tool_expected": null,
             "tool_predicted": null,
-            "passed": false,
+            "passed": true,
             "description": "Unresolved entity reference should clarify."
         },
         {
             "query": "Who won the IPL final?",
             "expected_action": "REFUSE",
-            "predicted_action": "CLARIFY",
+            "predicted_action": "REFUSE",
             "tool_expected": null,
             "tool_predicted": null,
-            "passed": false,
+            "passed": true,
             "description": "Out-of-domain query should refuse."
         },
         {
