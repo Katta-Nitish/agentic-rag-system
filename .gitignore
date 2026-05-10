@@ -1,0 +1,15 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Large Data & Vector Stores (Addressed Skyclad Feedback)
+arxiv_corpus/
+faiss_index/
+
+# Streamlit specific
+.streamlit/
+
+# OS generated files
+.DS_Store
+Thumbs.db

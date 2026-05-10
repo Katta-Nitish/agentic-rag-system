@@ -5,7 +5,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 embedding=OllamaEmbeddings(model="nomic-embed-text")
 loader=DirectoryLoader(
-    path=r'D:\Skyclad_Ventures_assignment\arxiv_corpus', 
+    path='arxiv_corpus', 
     glob="**/*.pdf",           
     loader_cls=PyPDFLoader,     
     show_progress=True

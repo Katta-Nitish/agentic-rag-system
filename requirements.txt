@@ -1,0 +1,22 @@
+# Web Framework & Core
+streamlit==1.34.0
+
+# Graph & Agent Logic
+langgraph
+langchain
+langchain-core
+langchain-community
+langchain-experimental
+langchain-ollama
+langchain-text-splitters
+
+# Tools & Math
+arxiv
+numexpr
+
+# Vector Store & Document Processing
+faiss-cpu
+pypdf
+
+# Embeddings & Reranking Models
+sentence-transformers
