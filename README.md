@@ -247,5 +247,3 @@ All-local inference via Ollama has zero per-query cost after model download, sta
 ```
 
 ---
-
-*Built for Skyclad Ventures AI Engineering Intern Assignment.*
