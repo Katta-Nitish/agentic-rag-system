@@ -1,4 +1,4 @@
-# 🧠 Agentic RAG — Skyclad Ventures Assignment
+# 🧠 Agentic RAG System
 
 > A multi-node LangGraph agent that decides *when* to retrieve, *when* to ask, *when* to use a tool, and *when* to refuse — grounded in a corpus of 50 arXiv cs.AI papers.
 
