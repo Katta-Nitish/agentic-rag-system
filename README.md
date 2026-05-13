@@ -1,4 +1,4 @@
-# 🧠 Agentic RAG — Skyclad Ventures Assignment
+# 🧠 Agentic RAG System
 
 > A multi-node LangGraph agent that decides *when* to retrieve, *when* to ask, *when* to use a tool, and *when* to refuse — grounded in a corpus of 50 arXiv cs.AI papers.
 
@@ -14,8 +14,8 @@
 
 ```bash
 # 1. Clone the repo
-git clone https://github.com/YOUR_USERNAME/agentic-rag
-cd agentic-rag
+git clone https://github.com/Katta-Nitish/agentic-rag-system.git
+cd agentic-rag-system
 
 # 2. Install dependencies
 pip install -r requirements.txt
@@ -41,13 +41,35 @@ streamlit run assignment.py
 
 ---
 
+## 🐳 Docker
+
+```bash
+# Build the image
+docker build -t agentic-rag .
+
+# Run — Ollama must be running on the host
+docker run -p 8501:8501 agentic-rag
+```
+
+> The app connects to Ollama on your host machine via `host.docker.internal:11434`. Make sure all five models are pulled before starting the container.
+
+---
+
 ## 🧪 Running Tests
 
 ```bash
+# Unit tests (calculator + code execution tools)
 pytest test_tools.py
+
+# Evaluation harness (all 10 routing cases)
+python eval.py
 ```
 
-Covers calculator correctness, division-by-zero handling, syntax errors, REPL success, and REPL error propagation.
+**`test_tools.py`** covers 5 cases:
+- Calculator: valid expression, division-by-zero, syntax error
+- PythonREPL: successful execution, NameError propagation
+
+**`eval.py`** covers all 5 routing decisions across 10 cases and writes results to `evaluation_results.json`.
 
 ---
 
@@ -140,10 +162,25 @@ Without reranking, the evaluator flagged `LOW_RELEVANCE` on the RAG paper compar
 | `tool_dispatch` | — | Graph junction node; routing handled by `tool_router` conditional edge |
 | `arXiv_search` | arXiv API | Live paper search for current research |
 | `calculator` | numexpr | Deterministic math via `ne.evaluate()` |
-| `code_execution` | PythonREPL | Runs LLM-generated Python code |
+| `code_execution` | PythonREPL | Runs LLM-generated Python code via `langchain-experimental` |
 | `evaluator` | llama3:8b | Judges evidence sufficiency before generation; returns typed failure reason |
 | `response_generator` | qwen3.5:9b | Synthesizes grounded response from retrieved context or tool output |
 | `refusal_node` | — | Returns structured refusal message based on typed failure reason |
+
+---
+
+## 🧠 Prompt Architecture
+
+All system prompts live in `prompts.py` as named constants. Each agent has a dedicated, isolated prompt:
+
+| Constant | Agent | Behaviour |
+|---|---|---|
+| `QUERY_REWRITER_SYSTEM_PROMPT` | Query Rewriter | Semantic normalization only — never resolves ambiguity, exposes it |
+| `QUERY_ANALYZER_SYSTEM_PROMPT` | Query Analyzer | Intent classification + routing; returns structured JSON with action, tool, confidence, reasoning |
+| `EVALUATOR_SYSTEM_PROMPT` | Evaluator | Evidence sufficiency judgment; returns typed failure reason (INSUFFICIENT_CONTEXT, LOW_RELEVANCE, CONTRADICTORY_CONTEXT, etc.) |
+| `RESPONSE_GENERATOR_SYSTEM_PROMPT` | Response Generator | Grounded generation from retrieved context or tool output only; no hallucination |
+
+Separating prompts from logic keeps each agent's behaviour independently auditable and easy to iterate without touching `assignment.py`.
 
 ---
 
@@ -163,8 +200,8 @@ The system uses **LangGraph's `InMemorySaver` checkpointer**, persisting the ful
 
 ## 🛠 Decisions Log
 
-### Corpus: arXiv cs.AI, last 90 days, 50 papers
-Directly relevant to the domain. 50 papers provides enough variety to test all routing paths without making indexing slow. Downloaded via the `arxiv` Python client in `file.py`.
+### Corpus: arXiv cs.AI, 50 papers sorted by submission date
+Directly relevant to the domain. Downloaded via the `arxiv` Python client in `file.py` using `query="cat:cs.AI"`, `max_results=50`, `sort_by=SubmittedDate`. 50 papers provides enough variety to test all routing paths without making indexing slow.
 
 ### Chunking: RecursiveCharacterTextSplitter, chunk_size=1024, overlap=150
 1024 tokens preserves technical context within a chunk (typically a paragraph or argument unit) while staying small enough to maintain retrieval precision. 150-token overlap prevents important content from being split across chunk boundaries.
@@ -173,16 +210,18 @@ Directly relevant to the domain. 50 papers provides enough variety to test all r
 Strong performance on technical text retrieval, runs entirely locally with no API cost, keeps the system fully self-contained.
 
 ### Vector Store: FAISS
-Fast, in-memory, no external database to manage. Right-sized for 50 papers (~few thousand chunks). At scale (10k+ documents) I'd move to a persistent store like Qdrant.
+Fast, in-memory, no external database to manage. Right-sized for 50 papers (~few thousand chunks). The index is built once via `vector.py` and loaded at startup with `@st.cache_resource` to avoid redundant deserialization. At scale (10k+ documents) I'd move to a persistent store like Qdrant.
 
 ### Agent Framework: LangGraph
 I needed explicit state management, conditional routing across more than three nodes, and the ability to pause mid-graph via `interrupt()` and resume on user input. LangChain Expression Language chains don't support this. LangGraph was the correct tool for this specific problem.
 
 ### LLM choices (all local via Ollama, zero per-query cost)
 - **qwen3:4b** for rewriting — lightweight normalization task, fast inference
-- **gemma3:12b** for routing — highest-stakes decision, needs stronger reasoning
+- **gemma3:12b** for routing — highest-stakes decision, needs stronger reasoning; outputs structured JSON
 - **llama3:8b** for evaluation — structured JSON classification task
 - **qwen3.5:9b** for generation — best instruction-following quality in the local stack
+
+All models connect to Ollama on `host.docker.internal:11434`, making the stack fully portable via Docker without any API keys.
 
 ### Why not OpenAI/Anthropic API?
 All-local inference via Ollama has zero per-query cost after model download, stays within the compute budget, and makes the system fully reproducible without API keys.
@@ -205,6 +244,8 @@ All-local inference via Ollama has zero per-query cost after model download, sta
 | 8 | How does it improve memory? | CLARIFY | CLARIFY | ✅ |
 | 9 | Who won the IPL final? | REFUSE | REFUSE | ✅ |
 | 10 | Tell me classified military secrets. | REFUSE | REFUSE | ✅ |
+
+Results are persisted to `evaluation_results.json` after each run.
 
 ---
 
@@ -234,18 +275,19 @@ All-local inference via Ollama has zero per-query cost after model download, sta
 ```
 .
 ├── assignment.py           # LangGraph agent + Streamlit UI
-├── prompts.py              # All system prompts as constants
-├── file.py                 # arXiv corpus downloader
-├── vector.py               # FAISS index builder
-├── eval.py                 # Evaluation harness
-├── test_tools.py           # Unit tests for calculator and code execution
+├── prompts.py              # All system prompts as named constants
+├── file.py                 # arXiv corpus downloader (cat:cs.AI, 50 papers)
+├── vector.py               # FAISS index builder (chunk_size=1024, overlap=150)
+├── eval.py                 # Evaluation harness (10 cases, saves to JSON)
+├── test_tools.py           # Unit tests for calculator and code execution (5 tests)
 ├── evaluation_results.json # Eval output (10/10, 100%)
 ├── requirements.txt        # All dependencies
+├── Dockerfile              # python:3.11-slim, exposes 8501
+├── .dockerignore           # Excludes __pycache__, .git, README
+├── .gitignore              # Excludes arxiv_corpus/, faiss_index/
 ├── arxiv_corpus/           # Downloaded PDFs (gitignored)
 ├── faiss_index/            # FAISS index files (gitignored)
 └── README.md
 ```
 
 ---
-
-*Built for Skyclad Ventures AI Engineering Intern Assignment.*

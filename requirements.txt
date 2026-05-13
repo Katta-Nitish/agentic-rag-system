@@ -5,6 +5,7 @@ streamlit==1.34.0
 langgraph
 langchain
 langchain-core
+langchain-classic
 langchain-community
 langchain-experimental
 langchain-ollama

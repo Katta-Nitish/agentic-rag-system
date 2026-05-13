@@ -16,11 +16,11 @@ import arxiv
 from langchain_experimental.tools import PythonREPLTool
 from langchain_community.vectorstores import FAISS
 from langchain_community.cross_encoders import HuggingFaceCrossEncoder
-from langchain.retrievers.document_compressors import (
+from langchain_classic.retrievers.document_compressors import (
     CrossEncoderReranker
 )
 
-from langchain.retrievers.contextual_compression import (
+from langchain_classic.retrievers.contextual_compression import (
     ContextualCompressionRetriever
 )
 from langgraph.types import interrupt, Command
@@ -76,7 +76,7 @@ class State(TypedDict):
     generated_response: Optional[str]
 
 def query_rewriter(state: State):
-    llm=ChatOllama(model="qwen3:4b", temperature=0.7, keep_alive=True)
+    llm=ChatOllama(model="qwen3:4b", temperature=0.7, keep_alive=True, base_url="http://host.docker.internal:11434")
 
     prompt=ChatPromptTemplate.from_messages([
         SystemMessage(content=QUERY_REWRITER_SYSTEM_PROMPT),
@@ -88,7 +88,7 @@ def query_rewriter(state: State):
 
 
 def query_analyzer(state: State):
-    llm=ChatOllama(model="gemma3:12b", temperature=0.7,format="json", keep_alive=True)    
+    llm=ChatOllama(model="gemma3:12b", temperature=0.7,format="json", keep_alive=True, base_url="http://host.docker.internal:11434")    
     prompt = ChatPromptTemplate.from_messages([
         SystemMessage(content=QUERY_ANALYZER_SYSTEM_PROMPT),
         ("user", "{query}")
@@ -133,7 +133,7 @@ def clarifier(state: State):
 
 @st.cache_resource
 def load_cached_vector():
-    return FAISS.load_local("faiss_index", OllamaEmbeddings(model="nomic-embed-text"), allow_dangerous_deserialization=True)
+    return FAISS.load_local("faiss_index", OllamaEmbeddings(model="nomic-embed-text", base_url="http://host.docker.internal:11434"), allow_dangerous_deserialization=True)
 
 def retriver(state: State):
     vector=load_cached_vector()
@@ -195,7 +195,7 @@ def code_execution(state: State):
 
 
 def evaluator(state: State):
-    llm=ChatOllama(model="llama3:8b", temperature=0.7,format="json", keep_alive=True)
+    llm=ChatOllama(model="llama3:8b", temperature=0.7,format="json", keep_alive=True, base_url="http://host.docker.internal:11434")
     tool_result = None
 
     if state.get("arxiv_results"):
@@ -254,7 +254,8 @@ def response_generator(state: State):
     llm = ChatOllama(
         model="qwen3.5:9b",
         temperature=0,
-        keep_alive=True
+        keep_alive=True,
+        base_url="http://host.docker.internal:11434"
     )
 
 
