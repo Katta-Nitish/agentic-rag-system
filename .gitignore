@@ -6,6 +6,7 @@ __pycache__/
 # Large Data & Vector Stores (Addressed Skyclad Feedback)
 arxiv_corpus/
 faiss_index/
+models/
 
 # Streamlit specific
 .streamlit/

@@ -63,7 +63,7 @@ class State(TypedDict):
     tool_name: Optional[str]
     tool_input: Optional[str]
 
-    retrieved_context: Optional[list]
+    retrieved_context: Optional[str]
 
     arxiv_results: Optional[list]
     calculation_result: Optional[str]
@@ -135,20 +135,20 @@ def clarifier(state: State):
 def load_cached_vector():
     return FAISS.load_local("faiss_index", OllamaEmbeddings(model="nomic-embed-text", base_url="http://host.docker.internal:11434"), allow_dangerous_deserialization=True)
 
+@st.cache_resource
+def load_cross_encoder():
+    return HuggingFaceCrossEncoder(model_name="./models/bge-reranker-base")
+
 def retriver(state: State):
     vector=load_cached_vector()
     retriever=vector.as_retriever(search_kwargs={"k": 20})
-    model=HuggingFaceCrossEncoder(model_name="BAAI/bge-reranker-base")
+    model=load_cross_encoder()
     compressor=CrossEncoderReranker(model=model, top_n=6)
     compression_retriver=ContextualCompressionRetriever(base_compressor=compressor, base_retriever=retriever)
     reranker_doc=compression_retriver.invoke(state['formatted_query'])
-    docs=[
-        {
-            "content": doc.page_content,
-            "metadata": doc.metadata
-        }
-        for doc in reranker_doc
-    ]
+    docs="\n\n---\n\n".join(
+            [f"Document {i+1}:\n{doc.page_content}" for i, doc in enumerate(reranker_doc)]
+        )
     return {"retrieved_context": docs}
 
 
